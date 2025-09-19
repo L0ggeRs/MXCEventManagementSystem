@@ -1,0 +1,24 @@
+services:
+    mxc.webapi:
+        image: ${DOCKER_REGISTRY-}mxcwebapi
+        container_name: mxc.webapi
+        environment:
+            CONNECTIONSTRINGS__MXC: ""
+        build:
+            context: .
+            dockerfile: MXC.WebApi/Dockerfile
+    mxc.db:
+        container_name: mxc.db
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        environment:
+            ACCEPT_EULA: Y
+            MSSQL_INITIAL_CATALOG: MXCEventDatabase
+            MSSQL_SA_PASSWORD: ""
+            MSSQL_DATA_DIR: /var/opt/mssql/data
+            MSSQL_PID: Express
+            MSSQL_TCP_PORT: 1433
+            MSSQL_PERSIST_SECURITY_INFO: true
+            MSSQL_TRUST_SERVER_CERTIFICATE: true
+            MSSQL_ENCRYPT: false
+        ports: 
+            - "1433:1433"

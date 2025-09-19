@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+	<PropertyGroup>
+		<Version>1.0.0</Version>
+		<UserSecretsId>f4b1c87b-2ed9-4560-9344-c98e0415137a</UserSecretsId>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+		<DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" />
+		<PackageReference Include="Swashbuckle.AspNetCore" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\MXC.Application\MXC.Application.csproj" />
+	  <ProjectReference Include="..\MXC.Infrastructure\MXC.Infrastructure.csproj" />
+	</ItemGroup>
+</Project>

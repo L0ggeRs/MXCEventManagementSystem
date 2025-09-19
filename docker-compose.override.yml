@@ -1,0 +1,18 @@
+services:
+    mxc.webapi:
+        environment:
+            - ASPNETCORE_ENVIRONMENT=Development
+            - ASPNETCORE_HTTP_PORTS=8080
+            - ASPNETCORE_HTTPS_PORTS=8081
+            - CONNECTIONSTRINGS__MXC=Data Source=mxc.db,1433;Initial Catalog=MXCEventDatabase;Persist Security Info=True;User ID=sa;Password=S3cr3tP@ssw0rd2025;Encrypt=False;Trust Server Certificate=True 
+        ports:
+            - "8080"
+            - "8081"
+        volumes:
+            - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
+            - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+            - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+            - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+    mxc.db:
+        environment:
+            - MSSQL_SA_PASSWORD=S3cr3tP@ssw0rd2025

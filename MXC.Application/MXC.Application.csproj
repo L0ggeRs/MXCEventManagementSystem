@@ -1,0 +1,10 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MXC.Domain\MXC.Domain.csproj" />
+    <ProjectReference Include="..\MXC.Infrastructure\MXC.Infrastructure.csproj" />
+    <ProjectReference Include="..\MXC.Shared\MXC.Shared.csproj" />
+  </ItemGroup>
+</Project>
