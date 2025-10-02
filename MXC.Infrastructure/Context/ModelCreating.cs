@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MXC.Infrastructure.Context.EntityModelBuilder;
 using MXC.Shared;
 
 namespace MXC.Infrastructure.Context;
@@ -13,6 +14,6 @@ internal static class ModelCreating
             .HasDefaultSchema("MXC")
             .UseCollation("Hungarian_100_CI_AS");
 
-        new EntityModelBuilder.EventEntityModelBuilder().ConfigureModel(modelBuilder);
+        new EventEntityModelBuilder().ConfigureModel(modelBuilder);
     }
 }

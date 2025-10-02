@@ -1,4 +1,5 @@
-﻿using MXC.Infrastructure.Context;
+﻿using MXC.Infrastructure.Configuration.SeedData;
+using MXC.Infrastructure.Context;
 using MXC.Shared;
 
 namespace MXC.Infrastructure.Configuration;
@@ -9,6 +10,6 @@ public static class SeedDataConfiguration
     {
         Ensure.NotNull(applicationTrackingDbContext);
 
-        new SeedData.EventEntityConfiguration().SeedData(applicationTrackingDbContext);
+        EventEntityConfiguration.SeedData(applicationTrackingDbContext);
     }
 }
