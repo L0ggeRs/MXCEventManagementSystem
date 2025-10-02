@@ -15,5 +15,7 @@ internal static class ModelCreating
             .UseCollation("Hungarian_100_CI_AS");
 
         new EventEntityModelBuilder().ConfigureModel(modelBuilder);
+        new LocationEntityModelBuilder().ConfigureModel(modelBuilder);
+        new CountryEntityModelBuilder().ConfigureModel(modelBuilder);
     }
 }

@@ -7,6 +7,8 @@ namespace MXC.Infrastructure.Context;
 public class ApplicationNoTrackingDbContext(DbContextOptions<ApplicationNoTrackingDbContext> options) : DbContext(options)
 {
     public virtual DbSet<EventEntity> Events { get; set; }
+    public virtual DbSet<LocationEntity> Locations { get; set; }
+    public virtual DbSet<CountryEntity> Countries { get; set; }
 
     public override int SaveChanges() => throw new InvalidOperationException("This DbContext is read-only.");
 

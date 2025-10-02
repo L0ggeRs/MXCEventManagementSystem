@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MXC.Application.Services.EventManagementService;
+using MXC.Domain.DataTransferObjects.Common;
 using MXC.Domain.DataTransferObjects.EventManagement;
 using MXC.Shared.Enum;
 
@@ -44,7 +45,7 @@ public class MXCEventManagementController(IEventManagementService eventManagemen
     }
 
     [HttpPut("event")]
-    public async Task<IActionResult> UpdateEventItem([FromBody] EventItemDTO eventItem, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateEventItem([FromBody] EventItemUpdateDTO eventItem, CancellationToken cancellationToken)
     {
         var result = await eventManagementService.UpdateEventItem(eventItem, cancellationToken);
 
@@ -93,6 +94,40 @@ public class MXCEventManagementController(IEventManagementService eventManagemen
         return result.Error switch
         {
             ErrorType.NotFound => NotFound(),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
+    }
+
+    [HttpGet("event/countries")]
+    public async Task<IActionResult> FilterCountries([FromQuery] SearchTextDTO searchText, CancellationToken cancellationToken)
+    {
+        var result = await eventManagementService.FilterCountries(searchText, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            return Ok(result.Value);
+        }
+
+        return result.Error switch
+        {
+            ErrorType.NotSet => BadRequest(),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
+    }
+
+    [HttpGet("event/locations")]
+    public async Task<IActionResult> FilterLocations([FromQuery] SearchTextDTO searchText, CancellationToken cancellationToken)
+    {
+        var result = await eventManagementService.FilterLocations(searchText, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            return Ok(result.Value);
+        }
+
+        return result.Error switch
+        {
+            ErrorType.NotSet => BadRequest(),
             _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
     }

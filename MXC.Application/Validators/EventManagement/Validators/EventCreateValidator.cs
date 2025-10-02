@@ -20,9 +20,8 @@ public sealed class EventCreateValidator : AbstractValidator<EventItemCreateDTO>
         RuleFor(x => x.EventName)
             .NotEmpty();
 
-        RuleFor(x => x.Location)
-            .NotEmpty()
-            .MaximumLength(100);
+        RuleFor(x => x.LocationId)
+            .NotEmpty();
 
         When(x => x.Capacity.HasValue, () =>
         {

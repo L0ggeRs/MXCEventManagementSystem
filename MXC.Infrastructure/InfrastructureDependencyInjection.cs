@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MXC.Infrastructure.Configuration;
 using MXC.Infrastructure.Context;
+using MXC.Infrastructure.Repositories.NoTracking.EventsRepository;
 
 namespace MXC.Infrastructure;
 
@@ -14,6 +15,16 @@ public static class InfrastructureDependencyInjection
         ConfigurationManager configurationManager)
     {
         addContext(services, configurationManager);
+        addRepositories(services);
+    }
+
+    private static void addRepositories(IServiceCollection services)
+    {
+        services.Scan(scan => scan
+            .FromAssemblies(typeof(IEventsNoTrackingRepository).Assembly)
+            .AddClasses()
+            .AsImplementedInterfaces()
+            .WithScopedLifetime());
     }
 
     private static void addContext(IServiceCollection services, ConfigurationManager configurationManager)

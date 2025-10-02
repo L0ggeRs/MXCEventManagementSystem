@@ -1,19 +1,24 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MXC.Application.Services.EventManagementService;
 using MXC.Application.Validators.EventManagement;
-using MXC.Domain.DataTransferObjects;
+using MXC.Domain.DataTransferObjects.Common;
 using MXC.Domain.DataTransferObjects.EventManagement;
 using MXC.Domain.Entities;
 using MXC.Domain.Enums;
-using MXC.Infrastructure.Context;
+using MXC.Infrastructure.Repositories.NoTracking.CountriesRepository;
+using MXC.Infrastructure.Repositories.NoTracking.EventsRepository;
+using MXC.Infrastructure.Repositories.NoTracking.LocationsRepository;
+using MXC.Infrastructure.Repositories.Tracking.EventsRepository;
 using MXC.Shared.Enum;
 using MXC.Shared.ResultType;
 
 namespace MXC.WebApi.Services.EventManagementService;
 
 internal class EventManagementService(
-    ApplicationNoTrackingDbContext noTrackingDbContext,
-    ApplicationTrackingDbContext trackingDbContext,
+    IEventsTrackingRepository eventsTrackingRepository,
+    IEventsNoTrackingRepository eventsNoTrackingRepository,
+    ICountriesNoTrackingRepository countriesNoTrackingRepository,
+    ILocationsNoTrackingRepository locationsNoTrackingRepository,
     IEventManagementValidators eventManagementValidators,
     ILogger<EventManagementService> logger) : IEventManagementService
 {
@@ -38,15 +43,15 @@ internal class EventManagementService(
             return Result.Failure(ErrorType.Validation, errorMessages);
         }
 
-        trackingDbContext.Events.Add(new EventEntity()
+        eventsTrackingRepository.Create(new EventEntity()
         {
             EventName = eventItemCreate.EventName,
-            EventLocation = eventItemCreate.Location,
-            Country = eventItemCreate.Country,
+            LocationId = eventItemCreate.LocationId,
+            CountryId = eventItemCreate.CountryId,
             Capacity = eventItemCreate.Capacity
         });
 
-        await trackingDbContext.SaveChangesAsync(cancellationToken);
+        await eventsTrackingRepository.SaveAsync(cancellationToken);
         logger.LogInformation("{MethodName} succeeded: event '{EventName}' created.", nameof(CreateEventItem), eventItemCreate.EventName);
         return Result.Success();
     }
@@ -54,7 +59,7 @@ internal class EventManagementService(
     /// <summary>
     /// Updates an existing event in the database.
     /// </summary>
-    public async Task<Result> UpdateEventItem(EventItemDTO eventItem, CancellationToken cancellationToken)
+    public async Task<Result> UpdateEventItem(EventItemUpdateDTO eventItem, CancellationToken cancellationToken)
     {
         if (eventItem is null)
         {
@@ -72,20 +77,20 @@ internal class EventManagementService(
             return Result.Failure(ErrorType.Validation, errorMessages);
         }
 
-        var item = await trackingDbContext.Events.SingleOrDefaultAsync(e => e.Id == eventItem.EventId, cancellationToken);
+        var eventEntity = await eventsTrackingRepository.FindEventById(eventItem.EventId, cancellationToken);
 
-        if (item is null)
+        if (eventEntity is null)
         {
             logger.LogError("{MethodName} failed: event with ID {EventId} not found.", nameof(UpdateEventItem), eventItem.EventId);
             return Result.Failure(ErrorType.NotFound);
         }
 
-        item.EventName = eventItem.EventName;
-        item.EventLocation = eventItem.Location;
-        item.Country = eventItem.Country;
-        item.Capacity = eventItem.Capacity;
+        eventEntity.EventName = eventItem.EventName;
+        eventEntity.LocationId = eventItem.LocationId;
+        eventEntity.CountryId = eventItem.CountryId;
+        eventEntity.Capacity = eventItem.Capacity;
 
-        await trackingDbContext.SaveChangesAsync(cancellationToken);
+        await eventsTrackingRepository.SaveAsync(cancellationToken);
         logger.LogInformation("{MethodName} succeeded: event with ID {EventId} updated.", nameof(UpdateEventItem), eventItem.EventId);
         return Result.Success();
     }
@@ -95,16 +100,17 @@ internal class EventManagementService(
     /// </summary>
     public async Task<Result> DeleteEventItem(int eventId, CancellationToken cancellationToken)
     {
-        var item = await trackingDbContext.Events.SingleOrDefaultAsync(e => e.Id == eventId, cancellationToken);
+        var eventItem = await eventsTrackingRepository.FindEventById(eventId, cancellationToken);
 
-        if (item is null)
+        if (eventItem is null)
         {
             logger.LogError("{MethodName} failed: event with ID {EventId} not found.", nameof(DeleteEventItem), eventId);
             return Result.Failure(ErrorType.NotFound);
         }
 
-        trackingDbContext.Events.Remove(item);
-        await trackingDbContext.SaveChangesAsync(cancellationToken);
+        eventsTrackingRepository.Delete(eventItem);
+
+        await eventsTrackingRepository.SaveAsync(cancellationToken);
         logger.LogInformation("{MethodName} succeeded: event with ID {EventId} deleted.", nameof(DeleteEventItem), eventId);
         return Result.Success();
     }
@@ -114,17 +120,7 @@ internal class EventManagementService(
     /// </summary>
     public async Task<Result<EventItemDTO>> GetEventItemByEventId(int eventId, CancellationToken cancellationToken)
     {
-        var eventItem = await noTrackingDbContext.Events
-            .Where(e => e.Id == eventId)
-            .Select(e => new EventItemDTO()
-            {
-                EventId = e.Id,
-                EventName = e.EventName,
-                Location = e.EventLocation,
-                Country = e.Country,
-                Capacity = e.Capacity
-            })
-            .SingleOrDefaultAsync(cancellationToken);
+        var eventItem = await eventsNoTrackingRepository.FindEventItemById(eventId, cancellationToken);
 
         if (eventItem is null)
         {
@@ -148,7 +144,7 @@ internal class EventManagementService(
         }
 
         var isAscending = eventManagementFilter.OrderDirection == OrderDirection.Asc;
-        var searchQuery = noTrackingDbContext.Events.AsQueryable();
+        var searchQuery = eventsNoTrackingRepository.GetEventForEventManagements();
 
         searchQuery = eventManagementFilter.EventManagementOrderBy switch
         {
@@ -156,8 +152,8 @@ internal class EventManagementService(
                 ? searchQuery.OrderBy(e => e.EventName)
                 : searchQuery.OrderByDescending(e => e.EventName),
             EventManagementOrderBy.EventLocation => isAscending
-                ? searchQuery.OrderBy(e => e.EventLocation)
-                : searchQuery.OrderByDescending(e => e.EventLocation),
+                ? searchQuery.OrderBy(e => e.LocationId)
+                : searchQuery.OrderByDescending(e => e.LocationId),
             EventManagementOrderBy.Capacity => isAscending
                 ? searchQuery.OrderBy(e => e.Capacity)
                 : searchQuery.OrderByDescending(e => e.Capacity),
@@ -165,17 +161,7 @@ internal class EventManagementService(
         };
 
         var searchResultCount = await searchQuery.CountAsync(cancellationToken);
-        var eventItems = await searchQuery
-            .Select(sq => new EventManagementItemDTO()
-            {
-                EventId = sq.Id,
-                EventName = sq.EventName,
-                Place = $"{sq.EventLocation}, {sq.Country ?? string.Empty}",
-                Capacity = sq.Capacity
-            })
-            .Skip(eventManagementFilter.PageNumber * eventManagementFilter.ItemsOnPage)
-            .Take(eventManagementFilter.ItemsOnPage)
-            .ToListAsync(cancellationToken);
+        var eventItems = await eventsNoTrackingRepository.GetEventManagementItems(searchQuery, eventManagementFilter.PageNumber, eventManagementFilter.ItemsOnPage, cancellationToken);
 
         logger.LogInformation(
             "{MethodName} succeeded: retrieved {ItemCount} items for page {PageNumber} (items per page: {ItemsOnPage}).",
@@ -191,5 +177,49 @@ internal class EventManagementService(
             ItemsOnPage = eventManagementFilter.ItemsOnPage,
             PageNumber = eventManagementFilter.PageNumber
         });
+    }
+
+    /// <summary>
+    /// Filters the countries from the database
+    /// </summary>
+    public async Task<Result<IReadOnlyCollection<EventCountryDTO>>> FilterCountries(SearchTextDTO searchText, CancellationToken cancellationToken)
+    {
+        if (searchText is null)
+        {
+            return Result<IReadOnlyCollection<EventCountryDTO>>.Failure(ErrorType.NotSet);
+        }
+
+        var searchQuery = countriesNoTrackingRepository.GetAllCountry();
+
+        if (!string.IsNullOrEmpty(searchText.SearchText))
+        {
+            searchQuery = searchQuery.Where(x => x.CountryName.Contains(searchText.SearchText));
+        }
+
+        var result = await countriesNoTrackingRepository.GetEventCountries(searchQuery, cancellationToken);
+
+        return Result<IReadOnlyCollection<EventCountryDTO>>.Success(result);
+    }
+
+    /// <summary>
+    /// Filters the locations from the database
+    /// </summary>
+    public async Task<Result<IReadOnlyCollection<EventLocationDTO>>> FilterLocations(SearchTextDTO searchText, CancellationToken cancellationToken)
+    {
+        if (searchText is null)
+        {
+            return Result<IReadOnlyCollection<EventLocationDTO>>.Failure(ErrorType.NotSet);
+        }
+
+        var searchQuery = locationsNoTrackingRepository.GetAllLocation();
+
+        if (!string.IsNullOrEmpty(searchText.SearchText))
+        {
+            searchQuery = searchQuery.Where(x => x.LocationName.Contains(searchText.SearchText));
+        }
+
+        var result = await locationsNoTrackingRepository.GetEventLocations(searchQuery, cancellationToken);
+
+        return Result<IReadOnlyCollection<EventLocationDTO>>.Success(result);
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace MXC.Domain.DataTransferObjects;
+﻿namespace MXC.Domain.DataTransferObjects.Common;
 
 public class PaginationWrapperDTO<T>
 {

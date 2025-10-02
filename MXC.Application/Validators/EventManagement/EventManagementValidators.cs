@@ -13,5 +13,5 @@ public class EventManagementValidators(
 {
     public IValidator<EventItemCreateDTO> EventCreateValidator => new EventCreateValidator(eventCreateLogger);
 
-    public IValidator<EventItemDTO> EventUpdateValidator => new EventUpdateValidator(eventUpdateLogger, noTrackingDbContext);
+    public IValidator<EventItemUpdateDTO> EventUpdateValidator => new EventUpdateValidator(eventUpdateLogger, noTrackingDbContext);
 }

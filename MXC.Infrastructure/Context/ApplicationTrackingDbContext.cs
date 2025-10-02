@@ -9,6 +9,8 @@ namespace MXC.Infrastructure.Context;
 public class ApplicationTrackingDbContext(DbContextOptions<ApplicationTrackingDbContext> options, IDateTimeService dateTimeService) : DbContext(options)
 {
     public virtual DbSet<EventEntity> Events { get; set; }
+    public virtual DbSet<LocationEntity> Locations { get; set; }
+    public virtual DbSet<CountryEntity> Countries { get; set; }
 
     public override int SaveChanges()
     {

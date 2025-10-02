@@ -3,16 +3,15 @@ using MXC.Domain.Entities;
 
 namespace MXC.Infrastructure.Context.EntityModelBuilder;
 
-internal sealed class EventEntityModelBuilder : EntityModelBuilderBase
+internal sealed class LocationEntityModelBuilder : EntityModelBuilderBase
 {
     public void ConfigureModel(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<EventEntity>(entity =>
+        modelBuilder.Entity<LocationEntity>(entity =>
         {
             configureCommonProperties(entity);
 
-            entity.Property(e => e.EventName).IsRequired();
-            entity.Property(e => e.LocationId).IsRequired();
+            entity.Property(e => e.LocationName).HasMaxLength(100).IsRequired();
         });
     }
 }

@@ -6,7 +6,7 @@ using MXC.Infrastructure.Context;
 
 namespace MXC.Application.Validators.EventManagement.Validators;
 
-public sealed class EventUpdateValidator : AbstractValidator<EventItemDTO>
+public sealed class EventUpdateValidator : AbstractValidator<EventItemUpdateDTO>
 {
     private readonly ApplicationNoTrackingDbContext _noTrackingDbContext;
 
@@ -29,9 +29,8 @@ public sealed class EventUpdateValidator : AbstractValidator<EventItemDTO>
         RuleFor(x => x.EventName)
             .NotEmpty();
 
-        RuleFor(x => x.Location)
-            .NotEmpty()
-            .MaximumLength(100);
+        RuleFor(x => x.LocationId)
+            .NotEmpty();
 
         When(x => x.Capacity.HasValue, () =>
         {

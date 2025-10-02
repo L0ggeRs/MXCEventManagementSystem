@@ -6,5 +6,5 @@ namespace MXC.Application.Validators.EventManagement;
 public interface IEventManagementValidators
 {
     IValidator<EventItemCreateDTO> EventCreateValidator { get; }
-    IValidator<EventItemDTO> EventUpdateValidator { get; }
+    IValidator<EventItemUpdateDTO> EventUpdateValidator { get; }
 }

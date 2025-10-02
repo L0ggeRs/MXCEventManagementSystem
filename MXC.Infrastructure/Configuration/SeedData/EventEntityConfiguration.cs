@@ -24,32 +24,6 @@ internal static class EventEntityConfiguration
             "Plodon Park",
             "Flumore Tye"
         ];
-        IList<string> eventLocations =
-        [
-            "Alexandria",
-            "Caloocan",
-            "Guadalajara",
-            "Vijayawada",
-            "Mashhad",
-            "Osaka",
-            "Algiers",
-            "Prague",
-            "Chennai",
-            "Dubai"
-        ];
-        IList<string> countries =
-        [
-            "Egypt",
-            "Philippines",
-            "Mexico",
-            "India",
-            "Iran",
-            "Japan",
-            "Algeria",
-            "Czech Republic",
-            "India",
-            "United Arab Emirates"
-        ];
         IList<int> capacities =
         [
             7720,
@@ -66,6 +40,8 @@ internal static class EventEntityConfiguration
 
         var count = 1000;
         var eventEntities = new List<EventEntity>(count);
+        var locations = applicationTrackingDbContext.Locations.Local.ToList();
+        var countries = applicationTrackingDbContext.Countries.Local.ToList();
 
         foreach (var i in Enumerable.Range(0, count))
         {
@@ -74,7 +50,7 @@ internal static class EventEntityConfiguration
             eventEntities.Add(new EventEntity()
             {
                 EventName = eventNames[RandomNumberGenerator.GetInt32(0, eventNames.Count)],
-                EventLocation = eventLocations[RandomNumberGenerator.GetInt32(0, eventLocations.Count)],
+                Location = locations[RandomNumberGenerator.GetInt32(0, locations.Count)],
                 Country = countries[RandomNumberGenerator.GetInt32(0, countries.Count)],
                 Capacity = capacity % 2 == 0 ? capacity : null
             });

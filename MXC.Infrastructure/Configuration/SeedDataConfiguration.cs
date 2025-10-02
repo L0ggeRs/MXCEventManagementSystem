@@ -10,6 +10,8 @@ public static class SeedDataConfiguration
     {
         Ensure.NotNull(applicationTrackingDbContext);
 
+        LocationEntityConfiguration.SeedData(applicationTrackingDbContext);
+        CountryEntityConfiguration.SeedData(applicationTrackingDbContext);
         EventEntityConfiguration.SeedData(applicationTrackingDbContext);
     }
 }
