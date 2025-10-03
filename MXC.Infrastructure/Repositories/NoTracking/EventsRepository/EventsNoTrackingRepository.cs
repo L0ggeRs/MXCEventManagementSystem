@@ -1,9 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MXC.Domain.DataTransferObjects.Common;
 using MXC.Domain.DataTransferObjects.EventManagement;
 using MXC.Domain.Entities;
+using MXC.Domain.Enums;
 using MXC.Infrastructure.Context;
 using MXC.Infrastructure.Models;
 using MXC.Infrastructure.Repositories.RepositoryBase.NoTrackingRepositoryBase;
+using MXC.Shared;
 
 namespace MXC.Infrastructure.Repositories.NoTracking.EventsRepository;
 
@@ -33,9 +36,12 @@ public class EventsNoTrackingRepository(ApplicationNoTrackingDbContext context) 
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    public IQueryable<EventManagementModel> GetEventForEventManagements()
+    public async Task<PaginationWrapperDTO<EventManagementItemDTO>> GetEventManagementItems(EventManagementFilterDTO eventManagementFilter, CancellationToken cancellationToken)
     {
-        return FindAll()
+        Ensure.NotNull(eventManagementFilter);
+
+        var isAscending = eventManagementFilter.OrderDirection == OrderDirection.Asc;
+        var searchQuery = FindAll()
             .Select(e => new EventManagementModel()
             {
                 EventId = e.Id,
@@ -46,20 +52,40 @@ public class EventsNoTrackingRepository(ApplicationNoTrackingDbContext context) 
                 CountryName = e.Country != null ? e.Country.CountryName : string.Empty
             })
             .AsQueryable();
-    }
 
-    public async Task<ICollection<EventManagementItemDTO>> GetEventManagementItems(IQueryable<EventManagementModel> events, int pageNumber, int itemsOnPage, CancellationToken cancellationToken)
-    {
-        return await events
-            .Select(sq => new EventManagementItemDTO()
+        searchQuery = eventManagementFilter.EventManagementOrderBy switch
+        {
+            EventManagementOrderBy.EventName => isAscending
+                ? searchQuery.OrderBy(e => e.EventName)
+                : searchQuery.OrderByDescending(e => e.EventName),
+            EventManagementOrderBy.EventLocation => isAscending
+                ? searchQuery.OrderBy(e => e.LocationId)
+                : searchQuery.OrderByDescending(e => e.LocationId),
+            EventManagementOrderBy.Capacity => isAscending
+                ? searchQuery.OrderBy(e => e.Capacity)
+                : searchQuery.OrderByDescending(e => e.Capacity),
+            _ => isAscending ? searchQuery.OrderBy(e => e.EventName) : searchQuery.OrderByDescending(e => e.EventName)
+        };
+
+        var searchResultCount = await searchQuery.CountAsync(cancellationToken);
+        var items = await searchQuery
+            .Select(x => new EventManagementItemDTO()
             {
-                EventId = sq.EventId,
-                EventName = sq.EventName,
-                Place = $"{sq.LocationName}, {sq.CountryName}",
-                Capacity = sq.Capacity
+                EventId = x.EventId,
+                EventName = x.EventName,
+                Place = $"{x.LocationName}, {x.CountryName}",
+                Capacity = x.Capacity
             })
-            .Skip(pageNumber * itemsOnPage)
-            .Take(itemsOnPage)
+            .Skip(eventManagementFilter.PageNumber * eventManagementFilter.ItemsOnPage)
+            .Take(eventManagementFilter.ItemsOnPage)
             .ToListAsync(cancellationToken);
+
+        return new PaginationWrapperDTO<EventManagementItemDTO>()
+        {
+            ItemCount = searchResultCount,
+            Items = items,
+            PageNumber = eventManagementFilter.PageNumber,
+            ItemsOnPage = eventManagementFilter.ItemsOnPage
+        };
     }
 }

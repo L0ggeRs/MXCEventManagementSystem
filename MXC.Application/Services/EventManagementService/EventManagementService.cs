@@ -1,10 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using MXC.Application.Services.EventManagementService;
+﻿using Microsoft.Extensions.Logging;
 using MXC.Application.Validators.EventManagement;
 using MXC.Domain.DataTransferObjects.Common;
 using MXC.Domain.DataTransferObjects.EventManagement;
 using MXC.Domain.Entities;
-using MXC.Domain.Enums;
 using MXC.Infrastructure.Repositories.NoTracking.CountriesRepository;
 using MXC.Infrastructure.Repositories.NoTracking.EventsRepository;
 using MXC.Infrastructure.Repositories.NoTracking.LocationsRepository;
@@ -12,9 +10,9 @@ using MXC.Infrastructure.Repositories.Tracking.EventsRepository;
 using MXC.Shared.Enum;
 using MXC.Shared.ResultType;
 
-namespace MXC.WebApi.Services.EventManagementService;
+namespace MXC.Application.Services.EventManagementService;
 
-internal class EventManagementService(
+public class EventManagementService(
     IEventsTrackingRepository eventsTrackingRepository,
     IEventsNoTrackingRepository eventsNoTrackingRepository,
     ICountriesNoTrackingRepository countriesNoTrackingRepository,
@@ -143,40 +141,16 @@ internal class EventManagementService(
             return Result<PaginationWrapperDTO<EventManagementItemDTO>>.Failure(ErrorType.NotSet);
         }
 
-        var isAscending = eventManagementFilter.OrderDirection == OrderDirection.Asc;
-        var searchQuery = eventsNoTrackingRepository.GetEventForEventManagements();
-
-        searchQuery = eventManagementFilter.EventManagementOrderBy switch
-        {
-            EventManagementOrderBy.EventName => isAscending
-                ? searchQuery.OrderBy(e => e.EventName)
-                : searchQuery.OrderByDescending(e => e.EventName),
-            EventManagementOrderBy.EventLocation => isAscending
-                ? searchQuery.OrderBy(e => e.LocationId)
-                : searchQuery.OrderByDescending(e => e.LocationId),
-            EventManagementOrderBy.Capacity => isAscending
-                ? searchQuery.OrderBy(e => e.Capacity)
-                : searchQuery.OrderByDescending(e => e.Capacity),
-            _ => isAscending ? searchQuery.OrderBy(e => e.EventName) : searchQuery.OrderByDescending(e => e.EventName)
-        };
-
-        var searchResultCount = await searchQuery.CountAsync(cancellationToken);
-        var eventItems = await eventsNoTrackingRepository.GetEventManagementItems(searchQuery, eventManagementFilter.PageNumber, eventManagementFilter.ItemsOnPage, cancellationToken);
+        var eventItems = await eventsNoTrackingRepository.GetEventManagementItems(eventManagementFilter, cancellationToken);
 
         logger.LogInformation(
             "{MethodName} succeeded: retrieved {ItemCount} items for page {PageNumber} (items per page: {ItemsOnPage}).",
             nameof(GetEventManagementItems),
-            eventItems.Count,
+            eventItems.ItemCount,
             eventManagementFilter.PageNumber,
             eventManagementFilter.ItemsOnPage);
 
-        return Result<PaginationWrapperDTO<EventManagementItemDTO>>.Success(new PaginationWrapperDTO<EventManagementItemDTO>()
-        {
-            Items = eventItems,
-            ItemCount = searchResultCount,
-            ItemsOnPage = eventManagementFilter.ItemsOnPage,
-            PageNumber = eventManagementFilter.PageNumber
-        });
+        return Result<PaginationWrapperDTO<EventManagementItemDTO>>.Success(eventItems);
     }
 
     /// <summary>
@@ -189,14 +163,7 @@ internal class EventManagementService(
             return Result<IReadOnlyCollection<EventCountryDTO>>.Failure(ErrorType.NotSet);
         }
 
-        var searchQuery = countriesNoTrackingRepository.GetAllCountry();
-
-        if (!string.IsNullOrEmpty(searchText.SearchText))
-        {
-            searchQuery = searchQuery.Where(x => x.CountryName.Contains(searchText.SearchText));
-        }
-
-        var result = await countriesNoTrackingRepository.GetEventCountries(searchQuery, cancellationToken);
+        var result = await countriesNoTrackingRepository.GetEventCountries(searchText, cancellationToken);
 
         return Result<IReadOnlyCollection<EventCountryDTO>>.Success(result);
     }
@@ -211,14 +178,7 @@ internal class EventManagementService(
             return Result<IReadOnlyCollection<EventLocationDTO>>.Failure(ErrorType.NotSet);
         }
 
-        var searchQuery = locationsNoTrackingRepository.GetAllLocation();
-
-        if (!string.IsNullOrEmpty(searchText.SearchText))
-        {
-            searchQuery = searchQuery.Where(x => x.LocationName.Contains(searchText.SearchText));
-        }
-
-        var result = await locationsNoTrackingRepository.GetEventLocations(searchQuery, cancellationToken);
+        var result = await locationsNoTrackingRepository.GetEventLocations(searchText, cancellationToken);
 
         return Result<IReadOnlyCollection<EventLocationDTO>>.Success(result);
     }

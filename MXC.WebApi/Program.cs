@@ -1,21 +1,14 @@
-using MXC.Application.Services.EventManagementService;
-using MXC.Application.Validators.EventManagement;
+using MXC.Application;
 using MXC.Infrastructure;
 using MXC.Infrastructure.Context;
-using MXC.Infrastructure.Services.DateTimeService;
 using MXC.WebApi.Middlewares;
-using MXC.WebApi.Services.EventManagementService;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddInfrastructure(builder.Configuration);
-
-builder.Services.AddSingleton<IDateTimeService, DateTimeService>();
-builder.Services.AddScoped<IEventManagementValidators, EventManagementValidators>();
-builder.Services.AddScoped<IEventManagementService, EventManagementService>();
-
+builder.Services.AddApplication();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

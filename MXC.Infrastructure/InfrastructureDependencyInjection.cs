@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using MXC.Infrastructure.Configuration;
 using MXC.Infrastructure.Context;
 using MXC.Infrastructure.Repositories.NoTracking.EventsRepository;
+using MXC.Infrastructure.Services.DateTimeService;
+using Scrutor;
 
 namespace MXC.Infrastructure;
 
@@ -15,16 +17,8 @@ public static class InfrastructureDependencyInjection
         ConfigurationManager configurationManager)
     {
         addContext(services, configurationManager);
+        addServices(services);
         addRepositories(services);
-    }
-
-    private static void addRepositories(IServiceCollection services)
-    {
-        services.Scan(scan => scan
-            .FromAssemblies(typeof(IEventsNoTrackingRepository).Assembly)
-            .AddClasses()
-            .AsImplementedInterfaces()
-            .WithScopedLifetime());
     }
 
     private static void addContext(IServiceCollection services, ConfigurationManager configurationManager)
@@ -46,5 +40,25 @@ public static class InfrastructureDependencyInjection
             .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
 
         services.AddScoped<ApplicationNoTrackingDbContext>();
+    }
+
+    private static void addServices(IServiceCollection services)
+    {
+        services.Scan(scan => scan
+            .FromAssemblyOf<IDateTimeService>()
+            .AddClasses(classes => classes.InNamespaces("MXC.Infrastructure.Services"))
+            .UsingRegistrationStrategy(RegistrationStrategy.Skip)
+            .AsImplementedInterfaces()
+            .WithSingletonLifetime());
+    }
+
+    private static void addRepositories(IServiceCollection services)
+    {
+        services.Scan(scan => scan
+            .FromAssemblyOf<IEventsNoTrackingRepository>()
+            .AddClasses(classes => classes.InNamespaces("MXC.Infrastructure.Repositories"))
+            .UsingRegistrationStrategy(RegistrationStrategy.Skip)
+            .AsImplementedInterfaces()
+            .WithScopedLifetime());
     }
 }
