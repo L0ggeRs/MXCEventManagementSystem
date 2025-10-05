@@ -5,7 +5,7 @@ using Scrutor;
 
 namespace MXC.Application;
 
-public static class InfrastructureDependencyInjection
+public static class ApplicationDependencyInjection
 {
     public static void AddApplication(this IServiceCollection services)
     {
